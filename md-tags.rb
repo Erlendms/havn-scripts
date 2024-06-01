@@ -2,6 +2,9 @@
 # encoding: UTF-8
 require 'shellwords'
 
+# This delay is there to increase reliability when used with Hazel.
+sleep 5
+
 # Specify the directories or file types
 file_extensions = ["*.md", "*.txt", "*.ulysses"] # Add or change extensions as needed
 search_directory = Dir.pwd # Or set a specific directory
