@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="utf-8"?>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+  </head>
+  <body>
+    <ul id="lgSfpygg">
+      <li id="KA">
+        <p>Draft Demo</p>
+        <ul>
+          <li id="nd6">
+            <p>Overview</p>
+            <ul>
+              <li id="EwJ">
+                <p>One use of Bike – preparing well structured Markdown documents.</p>
+                <ul>
+                  <li id="dcX">
+                    <p>You already can do a lot of different things with Bike, and its ability to read and write outlines in three formats:</p>
+                    <ul>
+                      <li id="2as">
+                        <p>Standard HTML nested lists (Bike's default and link-supporting native format)</p>
+                      </li>
+                      <li id="l8M">
+                        <p>OPML</p>
+                      </li>
+                      <li id="q4k">
+                        <p>Tab-indented indented plain text (Taskpaper's native format)</p>
+                      </li>
+                    </ul>
+                  </li>
+                  <li id="WAE">
+                    <p>The flexible and widely-supported HTML nested list format is supported by quite a rich ecosystem of standard tools.</p>
+                  </li>
+                  <li id="Tfb">
+                    <p>Here are a couple of draft demos of using just one of those tools (Apple's built-in `NSXMLDocument` library, accessed through `JavaScript for Automation`) to provide:</p>
+                    <ul>
+                      <li id="UFJ">
+                        <p>`Copy As Markdown` </p>
+                      </li>
+                      <li id="08l">
+                        <p>`Save As Markdown` </p>
+                      </li>
+                    </ul>
+                  </li>
+                  <li id="d0T">
+                    <p></p>
+                  </li>
+                  <li id="Xvu">
+                    <p>From a Markdown version of a Bike document, or copied Bike snippet, free tools like [Pandoc](https://pandoc.org/) let us automatically write out other formats, like MS Word `.docx`</p>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li id="Br">
+            <p>Save as Markdown, and Copy as Markdown, for Bike (preview) builds</p>
+            <ul>
+              <li id="5-0">
+                <p>JavaScript for Automation is one option</p>
+                <ul>
+                  <li id="70V">
+                    <p>Even where Bike itself is not installed, Bike files can be viewed in browsers, and any standard XML and HTML tools can be used for viewing and converting them.</p>
+                  </li>
+                  <li id="b5T">
+                    <p></p>
+                  </li>
+                  <li id="tPa">
+                    <p>In this demo, we are using `JavaScript for Automation`, with Apple's built-in `NSXMLDocument` library, which can read the outline structure of a Bike file directly.</p>
+                  </li>
+                </ul>
+              </li>
+              <li id="IGO">
+                <p>Other options</p>
+                <ul>
+                  <li id="u-j">
+                    <p>We could also have written a custom Copy As or Save As using widely-available standard tools like `XSLT` and `XQuery`.</p>
+                  </li>
+                  <li id="Nt8">
+                    <p></p>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li id="b-C">
+            <p>Mapping from outline levels to Markdown structure</p>
+            <ul>
+              <li id="L5f">
+                <p>Markdown Heading levels</p>
+                <ul>
+                  <li id="VwN">
+                    <p>We can map an outline structure to a Markdown document in any way that we like.</p>
+                  </li>
+                  <li id="M9i">
+                    <p>In this demo, we are interpreting the top N levels of the outline as Markdown hash headings.</p>
+                  </li>
+                  <li id="n66">
+                    <p></p>
+                  </li>
+                </ul>
+              </li>
+              <li id="gur">
+                <p>Quote blocks</p>
+                <ul>
+                  <li id="Cs6">
+                    <p>Any line, at any level in the outline, which starts with `&gt;` is interpreted as the start of a Markdown quote block.</p>
+                  </li>
+                  <li id="ScP">
+                    <p>The quote block ends at the first blank line that follows it.</p>
+                  </li>
+                  <li id="Tqu">
+                    <p>Here we have two quote blocks:</p>
+                  </li>
+                  <li id="aU-">
+                    <p></p>
+                  </li>
+                  <li id="R9w">
+                    <p>&gt; From sounds in the air to inscriptions on the printed page, the material structures of language both reflect, and then systematically transform, out thinking and reasoning about the world.   Andy Clark, *Supersizing the Mind*, 2008 Oxford University Press.</p>
+                  </li>
+                  <li id="4N8">
+                    <p></p>
+                  </li>
+                  <li id="z_B">
+                    <p>&gt; We were promised bicycles for the mind, but we got aircraft carriers instead.</p>
+                  </li>
+                  <li id="8jN">
+                    <p>&gt; [Jonathan Edwards](https://alarmingdevelopment.org/), quoted by @jesse</p>
+                  </li>
+                  <li id="LvI">
+                    <p></p>
+                  </li>
+                </ul>
+              </li>
+              <li id="UB-">
+                <p>Code blocks</p>
+                <ul>
+                  <li id="oCH">
+                    <p>Any line, at any indent level, which starts with three backticks is interpreted as marking the start or end of a code-block.</p>
+                  </li>
+                  <li id="_qb">
+                    <p>The top-level Bike-reading function in this draft JavaScript demo is:</p>
+                  </li>
+                  <li id="mom">
+                    <p></p>
+                  </li>
+                  <li id="Ouz">
+                    <p>```javascript</p>
+                  </li>
+                  <li id="xDc">
+                    <p>// treeFromBikeStringLR :: Bike String -&gt;</p>
+                  </li>
+                  <li id="8O">
+                    <p>// Either String [Tree String]</p>
+                  </li>
+                  <li id="au">
+                    <p>const treeFromBikeStringLR = s =&gt; {</p>
+                    <ul>
+                      <li id="eE">
+                        <p>const</p>
+                        <ul>
+                          <li id="P3">
+                            <p>error = $(),</p>
+                          </li>
+                          <li id="-E">
+                            <p>node = $.NSXMLDocument.alloc</p>
+                          </li>
+                          <li id="Be">
+                            <p>.initWithXMLStringOptionsError(</p>
+                            <ul>
+                              <li id="fM">
+                                <p>s, 0, error</p>
+                              </li>
+                            </ul>
+                          </li>
+                          <li id="xT">
+                            <p>);</p>
+                          </li>
+                        </ul>
+                      </li>
+                      <li id="t7">
+                        <p>return node.isNil() ? (() =&gt; {</p>
+                        <ul>
+                          <li id="sZ">
+                            <p>const</p>
+                            <ul>
+                              <li id="hz">
+                                <p>problem = ObjC.unwrap(</p>
+                                <ul>
+                                  <li id="zb">
+                                    <p>error.localizedDescription</p>
+                                  </li>
+                                </ul>
+                              </li>
+                              <li id="C7">
+                                <p>);</p>
+                              </li>
+                            </ul>
+                          </li>
+                          <li id="A7">
+                            <p>return Left(</p>
+                            <ul>
+                              <li id="aE">
+                                <p>`Not parseable as Bike:\n\n${problem}`</p>
+                              </li>
+                            </ul>
+                          </li>
+                          <li id="wk">
+                            <p>);</p>
+                          </li>
+                        </ul>
+                      </li>
+                      <li id="GF">
+                        <p>})() : treeFromBikeXMLNodeLR(node);</p>
+                      </li>
+                    </ul>
+                  </li>
+                  <li id="zz">
+                    <p>};</p>
+                  </li>
+                  <li id="GSs">
+                    <p>```</p>
+                  </li>
+                </ul>
+              </li>
+              <li id="2l1">
+                <p>Script options</p>
+                <ul>
+                  <li id="afN">
+                    <p>Number of heading levels ?</p>
+                    <ul>
+                      <li id="lbl">
+                        <p>How many of the top outline levels do we want to use for headings ? (6 is the maximum)</p>
+                      </li>
+                      <li id="9by">
+                        <p></p>
+                      </li>
+                      <li id="tEg">
+                        <p>```</p>
+                      </li>
+                      <li id="CFn">
+                        <p>const howManyHeadingLevels = 1;</p>
+                      </li>
+                      <li id="Nhd">
+                        <p>```</p>
+                      </li>
+                      <li id="VkO">
+                        <p></p>
+                      </li>
+                    </ul>
+                  </li>
+                  <li id="Bzr">
+                    <p>Top heading level ?</p>
+                    <ul>
+                      <li id="rPt">
+                        <p>Which MD heading level do we want to start the document with ?</p>
+                      </li>
+                      <li id="rEX">
+                        <p>We might want to reserve `#` for example, and skip straight to `##`. </p>
+                      </li>
+                      <li id="tro">
+                        <p>The lowest available Markdown heading is `######`</p>
+                      </li>
+                      <li id="0-u">
+                        <p></p>
+                      </li>
+                      <li id="LQX">
+                        <p>```</p>
+                      </li>
+                      <li id="oDR">
+                        <p>const startHeadingLevel = 2;</p>
+                      </li>
+                      <li id="QdR">
+                        <p>```</p>
+                      </li>
+                      <li id="WkL">
+                        <p></p>
+                      </li>
+                    </ul>
+                  </li>
+                  <li id="uyo">
+                    <p>Outline items as paragraphs or sentences ?</p>
+                    <ul>
+                      <li id="Fld">
+                        <p>Markdown expects paragraphs to be separated by a blank line (two `\n` characters).</p>
+                      </li>
+                      <li id="VJp">
+                        <p>Lines separated only by a single `\n` in Markdown are run together as continuous sentences inside a paragraph, until the next blank line.</p>
+                      </li>
+                      <li id="Jzn">
+                        <p></p>
+                      </li>
+                      <li id="mnI">
+                        <p>If we set the option `nodesAreParagraphs` to **true**, the export script adds a blank line after every outline item, turning each item into a Markdown paragraph on its own.</p>
+                      </li>
+                      <li id="qvM">
+                        <p>If we set `nodesAreParagraphs` to **false**, then we can add our own blank lines in the outline, and each series of outline items can be run together, by default, into a paragraph, until a blank line is found.</p>
+                      </li>
+                      <li id="97N">
+                        <p></p>
+                      </li>
+                      <li id="byd">
+                        <p>```</p>
+                      </li>
+                      <li id="9TM">
+                        <p>const nodesAreParagraphs = true;</p>
+                      </li>
+                      <li id="UOf">
+                        <p>```</p>
+                      </li>
+                      <li id="ZRG">
+                        <p></p>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li id="vV4">
+            <p>Versions of the script</p>
+            <ul>
+              <li id="LNQ">
+                <p>Each of these two demos is provided in two flavours:</p>
+                <ul>
+                  <li id="-I-">
+                    <p>A stand-alone script, which you could attach to a keyboard shortcut with something like [FastScripts](https://redsweater.com/fastscripts/),</p>
+                  </li>
+                  <li id="hit">
+                    <p>and a [Keyboard Maestro](https://www.keyboardmaestro.com/main/) version, which supports an options dialog for the Save As operation. ![](./optionsDialog.png)</p>
+                  </li>
+                </ul>
+              </li>
+              <li id="Pj">
+                <p>Copy Bike as Markdown</p>
+                <ul>
+                  <li id="dVn">
+                    <p>Select some lines in Bike, and run the script to copy the selection as Markdown.</p>
+                    <ul>
+                      <li id="eVe">
+                        <p>[CopyAsMarkdownForBike.zip](file:///Users/robintrew/Code/bike/CopyAsMarkdownForBike.zip)</p>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+              <li id="4k">
+                <p>Save Bike as Markdown</p>
+                <ul>
+                  <li id="pc4">
+                    <p>With a Bike document open:</p>
+                    <ul>
+                      <li id="r6v">
+                        <p>Run the script</p>
+                        <ul>
+                          <li id="-JN">
+                            <p>[SaveAsMarkdownForBike.zip](./SaveAsMarkdownForBike.zip)</p>
+                          </li>
+                        </ul>
+                      </li>
+                      <li id="tUA">
+                        <p>Confirm the formatting options if you are using the Keyboard Maestro version</p>
+                      </li>
+                      <li id="bB0">
+                        <p>and choose an output file name</p>
+                      </li>
+                    </ul>
+                  </li>
+                  <li id="6Kt">
+                    <p></p>
+                  </li>
+                </ul>
+              </li>
+              <li id="qhj">
+                <p></p>
+              </li>
+            </ul>
+          </li>
+          <li id="2x">
+            <p>Previewing Markdown</p>
+            <ul>
+              <li id="VS4">
+                <p>Marked</p>
+                <ul>
+                  <li id="Uqw">
+                    <p>You can preview and print from Markdown texts and clipboards, applying different CSS stylesheets, with [Marked 2](https://marked2app.com/).</p>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li id="YiN">
+            <p>Converting Markdown to MS Word `.docx`</p>
+            <ul>
+              <li id="8Cc">
+                <p>Pandoc</p>
+                <ul>
+                  <li id="XA">
+                    <p>The free [Pandoc](https://pandoc.org/) tool, which can be run from the command line, and included in script and macro flows, provides conversion from Markdown to .docx and a number of other formats.</p>
+                  </li>
+                  <li id="Iw">
+                    <p></p>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </body>
+</html>

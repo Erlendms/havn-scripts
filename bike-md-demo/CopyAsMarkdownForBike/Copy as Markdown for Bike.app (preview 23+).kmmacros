@@ -1,0 +1,799 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>Activate</key>
+		<string>Normal</string>
+		<key>CreationDate</key>
+		<real>661333110.76935995</real>
+		<key>Macros</key>
+		<array>
+			<dict>
+				<key>Actions</key>
+				<array>
+					<dict>
+						<key>ActionUID</key>
+						<integer>634306</integer>
+						<key>DisplayKind</key>
+						<string>None</string>
+						<key>HonourFailureSettings</key>
+						<true/>
+						<key>IncludeStdErr</key>
+						<false/>
+						<key>MacroActionType</key>
+						<string>ExecuteJavaScriptForAutomation</string>
+						<key>Path</key>
+						<string></string>
+						<key>Text</key>
+						<string>(() =&gt; {
+    "use strict";
+
+    // ---------- DEMO OF COPY BIKE AS MARKDOWN ----------
+
+    ObjC.import("AppKit");
+
+    // A basic `Copy As Markdown` serialization of the
+    // selection in a [Bike]( Build 22 ) outline window.
+
+    // Top N levels used as MD heading levels
+    // (Except for any quote or code lines at those levels)
+
+    // Next level (N + 1) used as paragraphs.
+    // (Use a blank line in Bike to delimit paragraphs)
+
+    // All levels below paragraphs are interpreted as
+    // nested lists - bulleted by default, but adopting
+    // any numeric list prefixes (numbers followed by
+    // dot and space) that are found in the outline.
+
+
+    // Rob Trew @2022
+    // Draft ver 0.005
+
+    // --------------------- OPTIONS ---------------------
+
+    const howManyHeadingLevels = 3;
+    const startHeadingLevel = 2;
+
+    // Set this to true if you don't have Keyboard Maestro
+    // installed, or prefer to use the values above
+    // directly, rather than than import values set in KM.
+    // (See the readSettings function below)
+    const ignoreKeyboardMaestro = true;
+
+
+    //  DEMO: copy Bike selection as Markdown
+
+    // main :: IO ()
+    const main = () =&gt; {
+        Application("Bike").activate();
+
+        const
+            se = Application("System Events"),
+            [
+                nHeadingLevels, topHeadingLevel
+            ] = readSettings(ignoreKeyboardMaestro);
+
+        return (
+            $.NSPasteboard.generalPasteboard.clearContents,
+            se.keystroke("c", {
+                using: "command down"
+            }),
+            // Increase to 0.2 etc if copy is ever missed.
+            delay(0.1),
+            either(
+                alert("Copy as Markdown from Bike.app")
+            )(
+                md =&gt; Object.assign(
+                    Application.currentApplication(), {
+                        includeStandardAdditions: true
+                    }
+                ).displayNotification(md, {
+                    withTitle: "Copied as Markdown",
+                    subtitle: "Bike selection:"
+                })
+            )(
+                bindLR(
+                    clipOfTypeLR("com.hogbaysoftware.bike.xml")
+                )(
+                    xml =&gt; bindLR(
+                        markdownFromBikeStringLR(
+                            nHeadingLevels
+                        )(
+                            topHeadingLevel
+                        )(xml)
+                    )(
+                        compose(Right, copyText)
+                    )
+                )
+            )
+        );
+    };
+
+
+    // readSettings :: Bool -&gt; IO (Int, Int)
+    const readSettings = ignoreKM =&gt;
+        // Reading the global option settings
+        // at the top of the script.
+        ignoreKM ? (
+            [howManyHeadingLevels, startHeadingLevel]
+        ) : kmOrManualSettings([
+            [
+                "HowManyHeadingLevels", howManyHeadingLevels
+            ],
+            [
+                "TopHeadingLevel", startHeadingLevel
+            ]
+        ]);
+
+
+    // headingListFromSettings :: Int -&gt; Int -&gt; [String]
+    const headingListFromSettings = nLevels =&gt;
+        // The list of hash heading levels required.
+        nFirst =&gt; enumFromTo(nFirst)(
+            nFirst + (nLevels - 1)
+        )
+        .map(n =&gt; `${"#".repeat(n)} `);
+
+
+    // kmOrManualSettings ::
+    // ((String, Int), (String, Int)) -&gt; IO (Int, Int)
+    const kmOrManualSettings = ([kvLevels, kvTop]) =&gt;
+        appIsInstalled(
+            "com.stairways.keyboardmaestro.engine"
+        ) ? (() =&gt; {
+            const
+                kmVar = Application(
+                    "Keyboard Maestro Engine"
+                ).getvariable;
+
+            return [kvLevels, kvTop].map(
+                ([k, n]) =&gt; parseInt(kmVar(k), 10) || n
+            );
+        })() : [kvLevels, kvTop].map(ab =&gt; ab[1]);
+
+
+    // --------------- MARKDOWN FROM BIKE ----------------
+
+    // -- TOP N OUTLINE LEVELS USED FOR HEADINGS
+    // -- (Excepting code and quote nodes at those levels)
+    // -- THEN PARAGRAPHS OF TEXT
+    // -- AND BELOW THAT, NESTED BULLET LISTS
+
+    // markdownFromBikeHTML :: Int -&gt; Int -&gt;
+    // HTML String -&gt; Either String MD String
+    const markdownFromBikeStringLR = nHeadingLevels =&gt;
+        // A basic Markdown translation of the bike HTML
+        // using the top N levels of the Bike outline as
+        // MD headings. topLevel gives the length of the
+        // shortest MD hash heading used.
+        topLevel =&gt; bikeHTML =&gt; {
+            const
+                hashHeadings = headingListFromSettings(
+                    nHeadingLevels
+                )(topLevel);
+
+            return bindLR(treeFromBikeStringLR(bikeHTML))(
+                tree =&gt; Right(
+                    // Each node decorated with an
+                    // outline level property.
+                    treeWithLevels(0)(
+                        // Contiguous runs of Quote and Code
+                        // lines consolidated to single nodes.
+                        mdBlockedTree(tree)
+                    )
+                    // Markdown rendering with heading prefixes
+                    // for top N levels.
+                    .nest.map(mdFromTree(hashHeadings))
+                    .join("\n")
+                )
+            );
+        };
+
+
+    // mdFromTree :: [String] -&gt;
+    // Tree {text::String, level::Int} -&gt; String
+    const mdFromTree = hashPrefixes =&gt;
+        // A basic Markdown serialization of a tree of
+        // {text, level} dictionaries, in which hashPrefixes,
+        // a list of length N, contains the MD prefixes for
+        // the top N levels of the tree, which are to be
+        // interpreted as headings.
+        // No inline formatting (links etc) is attempted.
+        tree =&gt; foldTree(
+            node =&gt; mds =&gt; (
+                Boolean(node.text.trim())
+            ) ? (
+                ["code", "quote"].includes(node.mdType) ? (
+                    node.text
+                ) : levelNodeMD(hashPrefixes)(node)(
+                    mds.join("")
+                )
+            ) : `\n${mds.join("")}\n`
+        )(tree)
+        // With any excessive gaps trimmed out.
+        .replace(/\n{3,}/gu, "\n\n");
+
+
+    // levelNodeMD :: [String] -&gt;
+    // {text::String, level::Int} -&gt; String -&gt; String
+    const levelNodeMD = hashPrefixes =&gt;
+        // Markdown representation of a given tree node
+        // based on the level of its nesting,
+        // and the given number and length of hashPrefixes.
+        node =&gt; subMD =&gt; {
+            const
+                level = node.level,
+                nHashLevels = hashPrefixes.length,
+                paraLevel = nHashLevels + 1,
+                pfx = level &lt; paraLevel ? (
+                    hashPrefixes[level - 1]
+                ) : level === paraLevel ? (
+                    ""
+                ) : "    ".repeat(
+                    (level - paraLevel) - 1
+                ),
+                txt = node.text.trim(),
+                mdtxt = `${pfx}${txt}`;
+
+            return level &lt; paraLevel ? (
+                level === nHashLevels ? (
+                    lowestHeading(mdtxt)(subMD)
+                ) : `${mdtxt}\n\n${subMD}`
+            ) : level === paraLevel ? (
+                paragraphLine(txt)(subMD)
+            ) : listItem(pfx)(txt)(subMD);
+        };
+
+
+    // listItem :: String -&gt; String -&gt;
+    // String -&gt; String
+    const listItem = pfx =&gt;
+        // List items are bulleted unless they already
+        // start with an integer string followed by a dot
+        // with trailing space.
+        txt =&gt; subMD =&gt; (/^\d+\.\s+/u).test(txt) ? (
+            `${pfx}${txt}\n${subMD}`
+        ) : `${pfx}- ${txt}\n${subMD}`;
+
+
+    // lowestHeading :: String -&gt; String -&gt; String
+    const lowestHeading = mdtxt =&gt;
+        // Any paragraphs under these headings are followed
+        // (as well as preceded) by two blank lines.
+        subMD =&gt; Boolean(subMD) ? (
+            `${mdtxt}\n\n${subMD}\n\n`
+        ) : `${mdtxt}\n\n`;
+
+
+    // paragraphLine :: String -&gt; String -&gt; String
+    const paragraphLine = txt =&gt;
+        // Lines of text, possibly interspersed with
+        // nests of bulleted or enumerated lists.
+        subMD =&gt; Boolean(subMD) ? (
+            // Any line descendents will be lists.
+            `${txt}\n\n${subMD}\n`
+            // Quote or code lines are \n delimited,
+        ) : txt.startsWith("&gt;") || txt.startsWith("`") ? (
+            `${txt}\n`
+            // but plain sentences are space-delimited.
+        ) : `${txt} `;
+
+
+    // ------------ MD CODE AND QUOTE BLOCKS -------------
+
+    // mdBlockedTree :: Tree Dict -&gt; Tree Dict
+    const mdBlockedTree = tree =&gt; {
+        // A copy of the tree with any code-fenced peer
+        // sequences or quote lines runs (at any level) are
+        // collapsed to single leaf nodes with outline
+        // text values in their roots.
+        const go = x =&gt;
+            Node(x.root)(
+                mdBlockedForest(x.nest)
+                .map(mdBlockedTree)
+            );
+
+        return go(tree);
+    };
+
+
+    // mdBlockedForest :: Forest Dict -&gt; Forest Dict
+    const mdBlockedForest = forest =&gt;
+        // A copy of the list of tree nodes in which any
+        // runs of quote or code nodes have been collapsed
+        // to single nodes which with multiline texts.
+        groupBy(
+            on(a =&gt; b =&gt; a === b)(
+                x =&gt; x.root.mdType
+            )
+        )(mdBlockTypedForest(forest))
+        .flatMap(gp =&gt; {
+            const typeName = gp[0].root.mdType;
+
+            return ["code", "quote"].includes(
+                typeName
+            ) ? (() =&gt; {
+                const
+                    blockOutline = forestOutline("    ")(
+                        x =&gt; x.text
+                    )(gp);
+
+                return [Node({
+                    text: `${blockOutline}\n`,
+                    mdType: typeName
+                })([])];
+            })() : gp;
+        });
+
+
+    // mdBlockTypedForest :: Forest NodeValue -&gt;
+    // Forest NodeValue
+    const mdBlockTypedForest = forest =&gt; {
+        // A copy of the list of tree nodes in which all
+        // top level nodes in the list are flagged with
+        // mdType: ("quote" | "code" | "other")
+        const typedTree = ([inCode, inQuote]) =&gt; tree =&gt; {
+            const
+                text = tree.root.text,
+                isCode = text.startsWith("```") ? (
+                    !inCode
+                ) : inCode,
+                isQuote = isCode ? (
+                    false
+                ) : inQuote ? (
+                    Boolean(text)
+                ) : text.startsWith("&gt;");
+
+            return Tuple([isCode, isQuote])(
+                typedNode(inCode)(isCode)(isQuote)(tree)
+            );
+        };
+
+        return snd(mapAccumL(typedTree)([false, false])(
+            forest
+        ));
+    };
+
+
+    // typedNode :: Bool -&gt; Bool -&gt; Bool -&gt;
+    // Tree Dict -&gt; Tree Dict
+    const typedNode = inCode =&gt;
+        isCode =&gt; isQuote =&gt; tree =&gt; Node(
+            Object.assign({}, tree.root, {
+                mdType: (isCode || inCode) ? (
+                    "code"
+                ) : isQuote ? (
+                    "quote"
+                ) : "other"
+            })
+        )(tree.nest);
+
+
+    // ---------------------- BIKE -----------------------
+
+    // treeFromBikeStringLR :: Bike String -&gt;
+    // Either String [Tree String]
+    const treeFromBikeStringLR = s =&gt; {
+        const
+            error = $(),
+            node = $.NSXMLDocument.alloc
+            .initWithXMLStringOptionsError(
+                s, 0, error
+            );
+
+        return node.isNil() ? (() =&gt; {
+            const
+                problem = ObjC.unwrap(
+                    error.localizedDescription
+                );
+
+            return Left(
+                `Not parseable as Bike:\n\n${problem}`
+            );
+        })() : treeFromBikeXMLNodeLR(node);
+    };
+
+
+    // treeFromBikeXMLNodeLR :: XML Node -&gt;
+    // Either String Tree String
+    const treeFromBikeXMLNodeLR = xmlRootNode =&gt; {
+        const
+            unWrap = ObjC.unwrap,
+            topNode = xmlRootNode.childAtIndex(0);
+
+        return bindLR(
+            "html" === unWrap(topNode.name) ? (
+                Right(topNode.childAtIndex(1))
+            ) : Left("Expected top-level &lt;html&gt; node.")
+        )(body =&gt; bindLR(
+            "body" === unWrap(body.name) ? (
+                Right(body.childAtIndex(0))
+            ) : Left("Expected a &lt;body&gt; node in bike HTML.")
+        )(topUL =&gt; "ul" === unWrap(topUL.name) ? (
+            Right(
+                Node({
+                    id: attribVal(topUL)("id"),
+                    text: "[Virtual Root]"
+                })(unWrap(topUL.children).map(
+                    lineTree
+                ))
+            )
+        ) : Left("Expected a top &lt;ul&gt; node in bike HTML.")));
+    };
+
+
+    // lineTree :: XMLNode LI -&gt; Tree String
+    const lineTree = node =&gt; {
+        const
+            unWrap = ObjC.unwrap,
+            pNode = node.childAtIndex(0);
+
+        return Node(
+            unWrap(node.attributes).reduce(
+                (a, attrib) =&gt; Object.assign(a, {
+                    [unWrap(attrib.name)]: unWrap(
+                        attrib.stringValue
+                    )
+                }), {
+                    text: unWrap(pNode.stringValue)
+                }
+            )
+        )(
+            1 &lt; parseInt(node.childCount, 10) ? (
+                unWrap(pNode.nextSibling.children)
+                .map(lineTree)
+            ) : []
+        );
+    };
+
+
+    // attribVal :: XMLNode -&gt; String -&gt; String
+    const attribVal = xmlNode =&gt;
+        // The value of a named attribute of the XML node.
+        k =&gt; ObjC.unwrap(
+            xmlNode.attributeForName(k).stringValue
+        ) || "";
+
+
+    // ---------------- LIBRARY FUNCTIONS ----------------
+
+    // ----------------------- JXA -----------------------
+    // https://github.com/RobTrew/prelude-jxa
+
+    // alert :: String =&gt; String -&gt; IO String
+    const alert = title =&gt;
+        s =&gt; {
+            const sa = Object.assign(
+                Application("System Events"), {
+                    includeStandardAdditions: true
+                });
+
+            return (
+                sa.activate(),
+                sa.displayDialog(s, {
+                    withTitle: title,
+                    buttons: ["OK"],
+                    defaultButton: "OK"
+                }),
+                s
+            );
+        };
+
+
+    // appIsInstalled :: String -&gt; Bool
+    const appIsInstalled = bundleID =&gt;
+        Boolean(
+            $.NSWorkspace.sharedWorkspace
+            .URLForApplicationWithBundleIdentifier(
+                bundleID
+            )
+            .fileSystemRepresentation
+        );
+
+
+    // clipOfTypeLR :: String -&gt; Either String String
+    const clipOfTypeLR = utiOrBundleID =&gt; {
+        const
+            clip = ObjC.deepUnwrap(
+                $.NSString.alloc.initWithDataEncoding(
+                    $.NSPasteboard.generalPasteboard
+                    .dataForType(utiOrBundleID),
+                    $.NSUTF8StringEncoding
+                )
+            );
+
+        return 0 &lt; clip.length ? (
+            Right(clip)
+        ) : Left(
+            "No clipboard content found " + (
+                `for type '${utiOrBundleID}'`
+            )
+        );
+    };
+
+
+    // copyText :: String -&gt; IO String
+    const copyText = s =&gt; {
+        const pb = $.NSPasteboard.generalPasteboard;
+
+        return (
+            pb.clearContents,
+            pb.setStringForType(
+                $(s),
+                $.NSPasteboardTypeString
+            ),
+            s
+        );
+    };
+
+    // --------------------- GENERIC ---------------------
+    // https://github.com/RobTrew/prelude-jxa
+
+    // Left :: a -&gt; Either a b
+    const Left = x =&gt; ({
+        type: "Either",
+        Left: x
+    });
+
+
+    // Node :: a -&gt; [Tree a] -&gt; Tree a
+    const Node = v =&gt;
+        // Constructor for a Tree node which connects a
+        // value of some kind to a list of zero or
+        // more child trees.
+        xs =&gt; ({
+            type: "Node",
+            root: v,
+            nest: xs || []
+        });
+
+
+    // Right :: b -&gt; Either a b
+    const Right = x =&gt; ({
+        type: "Either",
+        Right: x
+    });
+
+
+    // Tuple (,) :: a -&gt; b -&gt; (a, b)
+    const Tuple = a =&gt;
+        // A pair of values, possibly of
+        // different types.
+        b =&gt; ({
+            type: "Tuple",
+            "0": a,
+            "1": b,
+            length: 2,
+            *[Symbol.iterator]() {
+                for (const k in this) {
+                    if (!isNaN(k)) {
+                        yield this[k];
+                    }
+                }
+            }
+        });
+
+
+    // bindLR (&gt;&gt;=) :: Either a -&gt;
+    // (a -&gt; Either b) -&gt; Either b
+    const bindLR = m =&gt;
+        mf =&gt; m.Left ? (
+            m
+        ) : mf(m.Right);
+
+
+    // compose (&lt;&lt;&lt;) :: (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+    const compose = (...fs) =&gt;
+        // A function defined by the right-to-left
+        // composition of all the functions in fs.
+        fs.reduce(
+            (f, g) =&gt; x =&gt; f(g(x)),
+            x =&gt; x
+        );
+
+
+    // either :: (a -&gt; c) -&gt; (b -&gt; c) -&gt; Either a b -&gt; c
+    const either = fl =&gt;
+        // Application of the function fl to the
+        // contents of any Left value in e, or
+        // the application of fr to its Right value.
+        fr =&gt; e =&gt; e.Left ? (
+            fl(e.Left)
+        ) : fr(e.Right);
+
+
+    // enumFromTo :: Int -&gt; Int -&gt; [Int]
+    const enumFromTo = m =&gt;
+        n =&gt; Array.from({
+            length: 1 + n - m
+        }, (_, i) =&gt; m + i);
+
+
+    // foldTree :: (a -&gt; [b] -&gt; b) -&gt; Tree a -&gt; b
+    const foldTree = f =&gt; {
+        // The catamorphism on trees. A summary
+        // value obtained by a depth-first fold.
+        const go = tree =&gt; f(
+            root(tree)
+        )(
+            nest(tree).map(go)
+        );
+
+        return go;
+    };
+
+
+    // forestOutline :: String -&gt; (a -&gt; String) -&gt;
+    // Forest a -&gt; String
+    const forestOutline = indentUnit =&gt;
+        // An indented outline of the nodes
+        // (each stringified by f) of a forest.
+        f =&gt; forest =&gt; forest.flatMap(
+            foldTree(
+                x =&gt; xs =&gt; 0 &lt; xs.length ? [
+                    f(x), ...xs.flat(1)
+                    .map(s =&gt; `${indentUnit}${s}`)
+                ] : [f(x)]
+            )
+        ).join("\n");
+
+
+    // groupBy :: (a -&gt; a -&gt; Bool) -&gt; [a] -&gt; [[a]]
+    const groupBy = eqOp =&gt;
+        // A list of lists, each containing only elements
+        // equal under the given equality operator,
+        // such that the concatenation of these lists is xs.
+        xs =&gt; 0 &lt; xs.length ? (() =&gt; {
+            const [h, ...t] = xs;
+            const [groups, g] = t.reduce(
+                ([gs, a], x) =&gt; eqOp(x)(a[0]) ? (
+                    Tuple(gs)([...a, x])
+                ) : Tuple([...gs, a])([x]),
+                Tuple([])([h])
+            );
+
+            return [...groups, g];
+        })() : [];
+
+
+    // mapAccumL :: (acc -&gt; x -&gt; (acc, y)) -&gt; acc -&gt;
+    // [x] -&gt; (acc, [y])
+    const mapAccumL = f =&gt;
+        // A tuple of an accumulation and a list
+        // obtained by a combined map and fold,
+        // with accumulation from left to right.
+        acc =&gt; xs =&gt; [...xs].reduce(
+            ([a, bs], x) =&gt; second(
+                v =&gt; bs.concat(v)
+            )(
+                f(a)(x)
+            ),
+            Tuple(acc)([])
+        );
+
+
+    // nest :: Tree a -&gt; [a]
+    const nest = tree =&gt;
+        tree.nest;
+
+
+    // on :: (b -&gt; b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; a -&gt; c
+    const on = f =&gt;
+        // e.g. groupBy(on(eq)(length))
+        g =&gt; a =&gt; b =&gt; f(g(a))(g(b));
+
+
+    // snd :: (a, b) -&gt; b
+    const snd = tpl =&gt;
+        // Second member of a pair.
+        tpl[1];
+
+
+    // treeWithLevels :: Int -&gt; Tree Dict -&gt; Tree Dict
+    const treeWithLevels = topLevel =&gt;
+        // A tree in which each root dictionary is
+        // decorated with an integer 'level' value,
+        // where the level of the top node is given,
+        // the level of its children is topLevel + 1,
+        // and so forth downwards.
+        tree =&gt; {
+            const go = level =&gt;
+                node =&gt; {
+                    const
+                        nodeRoot = node.root,
+                        fullLevel = parseInt(
+                            nodeRoot.indent, 10
+                        ) || level;
+
+                    return Node(
+                        Object.assign({}, nodeRoot, {
+                            level: fullLevel
+                        })
+                    )(
+                        node.nest.map(go(1 + fullLevel))
+                    );
+                };
+
+            return go(topLevel)(tree);
+        };
+
+
+    // root :: Tree a -&gt; a
+    const root = tree =&gt;
+        // The value attached to a tree node.
+        tree.root;
+
+
+    // second :: (a -&gt; b) -&gt; ((c, a) -&gt; (c, b))
+    const second = f =&gt;
+        // A function over a simple value lifted
+        // to a function over a tuple.
+        // f (a, b) -&gt; (a, f(b))
+        ([x, y]) =&gt; Tuple(x)(f(y));
+
+
+    // MAIN
+    return main();
+})();</string>
+						<key>TimeOutAbortsMacro</key>
+						<true/>
+						<key>TrimResults</key>
+						<true/>
+						<key>TrimResultsNew</key>
+						<true/>
+						<key>UseText</key>
+						<true/>
+					</dict>
+				</array>
+				<key>CreationDate</key>
+				<real>665267715.12665796</real>
+				<key>CustomIconData</key>
+				<string>KMEC=Rounded=KMCOLOR:239,239,239,255=↓=86=6=0=0=KMCOLOR:255,0,0,255</string>
+				<key>ModificationDate</key>
+				<real>665267851.521258</real>
+				<key>Name</key>
+				<string>Copy as Markdown for Bike.app (preview 23+)</string>
+				<key>Triggers</key>
+				<array>
+					<dict>
+						<key>FireType</key>
+						<string>Pressed</string>
+						<key>KeyCode</key>
+						<integer>8</integer>
+						<key>MacroTriggerType</key>
+						<string>HotKey</string>
+						<key>Modifiers</key>
+						<integer>2304</integer>
+					</dict>
+				</array>
+				<key>UID</key>
+				<string>770140CA-885D-4AA9-95A2-A76643106F90</string>
+			</dict>
+		</array>
+		<key>Name</key>
+		<string>Bike</string>
+		<key>Targeting</key>
+		<dict>
+			<key>Targeting</key>
+			<string>Included</string>
+			<key>TargetingApps</key>
+			<array>
+				<dict>
+					<key>BundleIdentifier</key>
+					<string>com.hogbaysoftware.Bike</string>
+					<key>Name</key>
+					<string>Bike</string>
+					<key>NewFile</key>
+					<string>/Applications/Bike.app</string>
+				</dict>
+			</array>
+		</dict>
+		<key>ToggleMacroUID</key>
+		<string>0BBE967F-7BA7-4EDA-8C0F-C4DBC13B6270</string>
+		<key>UID</key>
+		<string>69C314D6-DEDC-446E-8722-6794D05E7555</string>
+	</dict>
+</array>
+</plist>
